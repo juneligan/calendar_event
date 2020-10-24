@@ -2,20 +2,23 @@ import 'dart:async';
 
 import 'package:calendar_event/main.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 
-class AddScreen extends StatefulWidget {
+class EditScreen extends StatefulWidget {
   final String title;
-  AddScreen({Key key, this.title}) : super(key: key);
+  final CalendarEvent event;
+  EditScreen({Key key, this.title, this.event}) : super(key: key);
 
   @override
-  _AddScreenState createState() => _AddScreenState();
+  _EditScreenState createState() => _EditScreenState();
 }
 
-class _AddScreenState extends State<AddScreen> {
-  TextEditingController eventNameController = TextEditingController();
+class _EditScreenState extends State<EditScreen> {
+  CalendarEvent event;
+  TextEditingController eventNameController;
   bool _isAllDay = false;
   TimeOfDay _selectedStartTime = TimeOfDay.now();
   TimeOfDay _selectedEndTime = TimeOfDay.now();
@@ -33,15 +36,30 @@ class _AddScreenState extends State<AddScreen> {
   @override
   void initState() {
     super.initState();
-    int hoursLimitPerDay = 23;
+    event = widget.event;
     setState(() {
-      if (_selectedStartTime.hour < hoursLimitPerDay) {
+      _selectedEventColor = event.eventColor;
+      int hoursLimitPerDay = 23;
+      if (event.duration < Duration(hours: 24)) {
+        _selectedStartTime = _selectedStartTime.replacing(hour: event.duration.inHours.remainder(24), minute: event.duration.inMinutes.remainder(60));
+        if (_selectedStartTime.hour < hoursLimitPerDay) {
+          _selectedEndTime =
+              _selectedStartTime.replacing(hour: _selectedStartTime.hour + 1);
+        } else {
+          _selectedEndTime =
+              _selectedStartTime.replacing(hour: 0);
+        }
+      } else if (event.duration == Duration(hours: 24)) {
+        _isAllDay = true;
         _selectedEndTime =
-            _selectedStartTime.replacing(hour: _selectedStartTime.hour + 1);
+            _selectedStartTime.replacing(hour: 0);
       } else {
         _selectedEndTime =
             _selectedStartTime.replacing(hour: 0);
       }
+      _selectedStartDate = event.date;
+      eventNameController = TextEditingController(text: event.name);
+
     });
   }
 

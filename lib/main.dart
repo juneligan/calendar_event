@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import 'edit_screen.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -100,6 +102,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
   
   _navigateToAddEvent(BuildContext context) async {
+    print('TEST');
     CalendarEvent result = await Navigator.push(context, new MaterialPageRoute(
       builder: (BuildContext ctx) => AddScreen(),
       fullscreenDialog: true,)
@@ -151,12 +154,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     );
   }
 
-
-  void _onVisibleDaysChanged(
-      DateTime first, DateTime last, CalendarFormat format) {
-    print('CALLBACK: _onVisibleDaysChanged');
-  }
-
   Widget _buildEventsMarker(DateTime date, List events) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -188,11 +185,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   Widget _buildEventList() {
     List events = _selectedCalendarDate ?? [];
-    List<Widget> widgetEvents = events.map((event) {
+    List<Widget> widgetEvents = events.asMap().map((index, event) {
 
       final int hour = event.duration.inHours;
       final int minutes = event.duration.inMinutes.remainder(60);
-      return Container(
+      return MapEntry(index, Container(
         decoration: BoxDecoration(
           color: event.eventColor,
           border: Border(bottom: BorderSide(
@@ -204,15 +201,44 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           title: Text(
               '${hour.toString().padLeft(2, "0")}:${minutes.toString().padLeft(
                   2, "0")} - ${event.name}'),
-          onTap: () => print('$event tapped!'),
+          onTap: () {
+            print('$event tapped!');
+            _navigateToEditEvent(context, index, event);
+          },
         ),
-      );
-    }).toList();
+      ));
+    }).values.toList();
     return ListView(
       scrollDirection: Axis.vertical,
       shrinkWrap: true,
       children: widgetEvents,
     );
+  }
+
+  _navigateToEditEvent(BuildContext context, int index, CalendarEvent event) async {
+    CalendarEvent result = await Navigator.push(context, new MaterialPageRoute(
+      builder: (BuildContext ctx) => EditScreen(event: event),
+      fullscreenDialog: true,)
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    DateTime formattedDate = DateTime(result.date.year, result.date.month, result.date.day, 0, 0);
+    List events = _eventsOfTheSelectedDay[formattedDate];
+    List<dynamic> existingEvents = events != null && events.isNotEmpty? events.toList(): [];
+    existingEvents.removeAt(index);
+    existingEvents.insert(index, result);
+
+    existingEvents.forEach((event) {
+      print(event.name);
+    });
+
+    setState(() {
+      _eventsOfTheSelectedDay[formattedDate] = existingEvents;
+      _selectedCalendarDate = existingEvents;
+    });
   }
 
   static Future<String> createAlertDialog(BuildContext context, String dialogText, String buttonText) {
