@@ -84,27 +84,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       body: Column(
         mainAxisSize: MainAxisSize.max,
         children: <Widget>[
-          TableCalendar(
-            events: _eventsOfTheSelectedDay,
-            calendarController: _calendarController,
-            onDaySelected: _onDaySelected,
-            builders: CalendarBuilders(
-              markersBuilder: (context, date, events, holidays) {
-                final children = <Widget>[];
-
-                if (events.isNotEmpty) {
-                  children.add(
-                    Positioned(
-                      right: 1,
-                      bottom: 1,
-                      child: _buildEventsMarker(date, events),
-                    ),
-                  );
-                }
-                return children;
-              },
-            ),
-          ),
+          _createTableCalendar(),
           Expanded(child: _buildEventList()),
         ],
       ),
@@ -125,7 +105,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       fullscreenDialog: true,)
     );
 
-    print(result);
+    if (result == null) {
+      return;
+    }
 
     DateTime formattedDate = DateTime(result.date.year, result.date.month, result.date.day, 0, 0);
     List events = _eventsOfTheSelectedDay[formattedDate];
@@ -140,6 +122,30 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       _eventsOfTheSelectedDay[formattedDate] = existingEvents;
       _selectedCalendarDate = existingEvents;
     });
+  }
+
+  Widget _createTableCalendar() {
+    return TableCalendar(
+      events: _eventsOfTheSelectedDay,
+      calendarController: _calendarController,
+      onDaySelected: _onDaySelected,
+      builders: CalendarBuilders(
+        markersBuilder: (context, date, events, holidays) {
+          final children = <Widget>[];
+
+          if (events.isNotEmpty) {
+            children.add(
+              Positioned(
+                right: 1,
+                bottom: 1,
+                child: _buildEventsMarker(date, events),
+              ),
+            );
+          }
+          return children;
+        },
+      ),
+    );
   }
 
   Widget _buildEventsMarker(DateTime date, List events) {
