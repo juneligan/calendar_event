@@ -129,6 +129,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       events: _eventsOfTheSelectedDay,
       calendarController: _calendarController,
       onDaySelected: _onDaySelected,
+      availableCalendarFormats: const {
+        CalendarFormat.month: '',
+      },
       builders: CalendarBuilders(
         markersBuilder: (context, date, events, holidays) {
           final children = <Widget>[];
@@ -146,6 +149,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         },
       ),
     );
+  }
+
+
+  void _onVisibleDaysChanged(
+      DateTime first, DateTime last, CalendarFormat format) {
+    print('CALLBACK: _onVisibleDaysChanged');
   }
 
   Widget _buildEventsMarker(DateTime date, List events) {

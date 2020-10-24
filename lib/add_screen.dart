@@ -44,7 +44,7 @@ class _AddScreenState extends State<AddScreen> {
           icon: Icon(Icons.close, color: Colors.black),
           onPressed: () {
             if (eventNameController.text.isNotEmpty) {
-              _createAlertDialog(context).then((value) {
+              _showDiscardAlertDialog(context).then((value) {
                 if (value) {
                   Navigator.pop(context, null);
                 }
@@ -59,6 +59,12 @@ class _AddScreenState extends State<AddScreen> {
             textColor: Colors.white,
             onPressed: () {
               String name = eventNameController.text.toString();
+              if (name == null || name.isEmpty) {
+                _showEmptyTitleAlertDialog(context).then((value) {
+                  return;
+                });
+                return;
+              }
 
               DateTime date = DateTime(
                   _selectedStartDate.year, _selectedStartDate.month, _selectedStartDate.day,
@@ -251,7 +257,7 @@ class _AddScreenState extends State<AddScreen> {
     );
   }
 
-  static Future<bool> _createAlertDialog(BuildContext context) {
+  static Future<bool> _showDiscardAlertDialog(BuildContext context) {
     return showDialog(context: context, builder: (context) {
       return AlertDialog(
           title: Text('Discard this event?'),
@@ -265,6 +271,21 @@ class _AddScreenState extends State<AddScreen> {
               onPressed: () => Navigator.of(context).pop(false),
               elevation: 5.0,
               child: Text('Keep editing'),
+            ),
+          ]
+      );
+    });
+  }
+
+  static Future<bool> _showEmptyTitleAlertDialog(BuildContext context) {
+    return showDialog(context: context, builder: (context) {
+      return AlertDialog(
+          title: Text('Event title is required.'),
+          actions: <Widget>[
+            MaterialButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              elevation: 5.0,
+              child: Text('Ok'),
             ),
           ]
       );
