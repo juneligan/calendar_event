@@ -32,31 +32,41 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   CalendarController _calendarController;
-  Map<DateTime, List> _events = Map<DateTime, List>();
-  List _selectedEvents = [];
+  Map<DateTime, List> _eventsOfTheSelectedDay = Map<DateTime, List>();
+  List _selectedCalendarDate = [];
   DateTime _selectedDay = DateTime.now();
+//  List users = [
+//    const Item('Android',Icon(Icons.android,color:  const Color(0xFF167F67),)),
+//    const Item('Flutter',Icon(Icons.flag,color:  const Color(0xFF167F67),)),
+//    const Item('ReactNative',Icon(Icons.format_indent_decrease,color:  const Color(0xFF167F67),)),
+//    const Item('iOS',Icon(Icons.mobile_screen_share,color:  const Color(0xFF167F67),)),
+//  ];
 
   @override
   void initState() {
     super.initState();
     _calendarController = CalendarController();
 
-    _events = {
-      _selectedDay.subtract(Duration(days: 30)): [
-        'Event A0',
-        'Event B0',
-        'Event C0'
-      ],
-      _selectedDay.subtract(Duration(days: 27, hours: 5)): ['Event A1'],
-      _selectedDay: [
-        'Event A2',
-        'Event B2',
-        'Event C2',
-        'Event D2',
-      ]
-    };
+    CalendarEvent event1 = CalendarEvent('name 1', _selectedDay.subtract(Duration(days: 1)), Duration(days: 1), Colors.lightGreen);
+    CalendarEvent event2 = CalendarEvent('name 2', _selectedDay.subtract(Duration(days: 2)), Duration(days: 1), Colors.lightGreen);
+    CalendarEvent event3 = CalendarEvent('name 3', _selectedDay.subtract(Duration(hours: 2)), Duration(hours: 21), Colors.lightGreen);
+    CalendarEvent event4 = CalendarEvent('name 4', _selectedDay.subtract(Duration(hours: 2, minutes: 30)), Duration(hours: 15, minutes: 30), Colors.lightGreen);
+
+    [event1, event2, event3, event4].forEach((event) {
+
+      DateTime formattedDate = DateTime(event.date.year, event.date.month, event.date.day, 0, 0);
+      List calendarEvents = _eventsOfTheSelectedDay[formattedDate];
+      if (calendarEvents == null) {
+        calendarEvents = [];
+      }
+      calendarEvents.add(event);
+      _eventsOfTheSelectedDay[formattedDate] = calendarEvents;
+
+    });
+
+    DateTime formattedDate = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day, 0, 0);
     setState(() {
-      _selectedEvents = _events[_selectedDay];
+      _selectedCalendarDate = _eventsOfTheSelectedDay[formattedDate];
     });
   }
 
@@ -75,7 +85,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         mainAxisSize: MainAxisSize.max,
         children: <Widget>[
           TableCalendar(
-            events: _events,
+            events: _eventsOfTheSelectedDay,
             calendarController: _calendarController,
             onDaySelected: _onDaySelected,
             builders: CalendarBuilders(
@@ -95,7 +105,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               },
             ),
           ),
-          Expanded(child: _buildEventList()),
+          Expanded(child: _buildEventList2()),
         ],
       ),
 
@@ -109,13 +119,27 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     );
   }
   
-  static _navigateToAddEvent(BuildContext context) async {
-    var result = await Navigator.push(context, new MaterialPageRoute(
+  _navigateToAddEvent(BuildContext context) async {
+    CalendarEvent result = await Navigator.push(context, new MaterialPageRoute(
       builder: (BuildContext ctx) => AddScreen(),
       fullscreenDialog: true,)
     );
 
-    Scaffold.of(context).showSnackBar(SnackBar(content: Text("$result"),duration: Duration(seconds: 3),));
+    print(result);
+
+    DateTime formattedDate = DateTime(result.date.year, result.date.month, result.date.day, 0, 0);
+    List events = _eventsOfTheSelectedDay[formattedDate];
+    List<dynamic> existingEvents = events != null && events.isNotEmpty? events.toList(): [];
+    existingEvents.add(result);
+
+    existingEvents.forEach((event) {
+      print(event.name);
+    });
+
+    setState(() {
+      _eventsOfTheSelectedDay[formattedDate] = existingEvents;
+      _selectedCalendarDate = existingEvents;
+    });
   }
 
   Widget _buildEventsMarker(DateTime date, List events) {
@@ -143,33 +167,38 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     print('CALLBACK: _onDaySelected');
     print(events);
     setState(() {
-      _selectedEvents = events;
+      _selectedCalendarDate = events;
     });
   }
 
-  Widget _buildEventList() {
-    List<dynamic> events = _selectedEvents ?? [];
-    return ListView(
-      scrollDirection: Axis.vertical,
-      shrinkWrap: true,
-      children: events
-          .map((event) => Container(
+  Widget _buildEventList2() {
+
+
+    List events = _selectedCalendarDate ?? [];
+    List<Widget> widgetEvents = events.map((event) {
+
+      final int hour = event.duration.inHours;
+      final int minutes = event.duration.inMinutes.remainder(60);
+      return Container(
         decoration: BoxDecoration(
-          color: Colors.red[100],
+          color: event.eventColor,
           border: Border(bottom: BorderSide(
               color: Colors.blueAccent,
               width: 0.4
           )),
-//          borderRadius: BorderRadius.circular(12.0),
         ),
-//        margin:
-//        const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
         child: ListTile(
-          title: Text(event.toString()),
+          title: Text(
+              '${hour.toString().padLeft(2, "0")}:${minutes.toString().padLeft(
+                  2, "0")} - ${event.name}'),
           onTap: () => print('$event tapped!'),
         ),
-      ))
-          .toList(),
+      );
+    }).toList();
+    return ListView(
+      scrollDirection: Axis.vertical,
+      shrinkWrap: true,
+      children: widgetEvents,
     );
   }
 
@@ -230,6 +259,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 }
 
 class CalendarEvent {
+  int id;
   String name;
   DateTime date;
   Duration duration;

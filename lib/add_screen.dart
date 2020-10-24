@@ -19,7 +19,7 @@ class _AddScreenState extends State<AddScreen> {
   TextEditingController eventNameController = TextEditingController();
   bool _isAllDay = false;
   TimeOfDay _selectedStartTime = TimeOfDay.now();
-  TimeOfDay _selectedEndTime = TimeOfDay.now();
+  TimeOfDay _selectedEndTime = TimeOfDay.now().replacing(hour: TimeOfDay.now().hour + 1);
   static final DateFormat formatter = DateFormat('E, MMM d, y');
   DateTime _selectedStartDate = DateTime.now();
   DateTime _selectedEndDate = DateTime.now();
@@ -60,18 +60,10 @@ class _AddScreenState extends State<AddScreen> {
                   _selectedStartTime.hour, _selectedStartTime.minute
               );
 
-
-
-              Duration duration = _isAllDay ? 0
-                  : Duration(hours: _selectedEndTime.hour, minutes: _selectedEndTime.minute) - Duration(hours: _selectedStartTime.hour, minutes: _selectedStartTime.minute);
-//              CalendarEvent event = CalendarEvent()
-
-              print('--------------------1');
-              print(duration);
-              print(name);
-              print(date);
-              print('--------------------2');
-//              Navigator.pop(context, null);
+              Duration duration = _isAllDay ? Duration(days: 1)
+                  : Duration(hours: _selectedStartTime.hour, minutes: _selectedStartTime.minute);
+              CalendarEvent event = CalendarEvent(name, date, duration, Colors.lightGreen);
+              Navigator.pop(context, event);
             },
             child: Text("Save"),
             shape: CircleBorder(side: BorderSide(color: Colors.transparent)),
@@ -82,14 +74,15 @@ class _AddScreenState extends State<AddScreen> {
         children: <Widget>[
           _createEventTextField(eventNameController, 'Add Title'),
           _createAllDaySwitch(),
-          _createDateTimeRow(context, _selectedStartDate, _selectedStartTime,
-                  () => _selectStartDate(context),
-                  () => _selectStartTime(context)),
-          _createDateTimeRow(context, _selectedEndDate, _selectedEndTime,
-                  () => _selectEndDate(context),
+          GestureDetector(
+            onTap: () => _selectStartDate(context),
+            child: Center(child: Text(formatter.format(_selectedStartDate),
+              style: TextStyle(fontSize: 20.0),),
+            )),
+          _createDateTimeRow(context, _selectedStartTime, _selectedEndTime,
+                  () => _selectStartTime(context),
                   () => _selectEndTime(context)),
         ],
-
       ),
     );
   }
@@ -97,19 +90,27 @@ class _AddScreenState extends State<AddScreen> {
   Future<Null> _selectStartTime(BuildContext context ) async {
     final picked = await showTimePicker(context: context, initialTime: _selectedStartTime);
 
-    print(picked);
-    setState(() {
-      _selectedStartTime = picked;
-    });
+    print(_selectedStartTime);
+    if (picked != null && picked != _selectedStartTime) {
+      int nextHour = _selectedStartTime.hour + 1;
+      TimeOfDay nextTimeOfDay = _selectedStartTime.replacing(hour: nextHour);
+      setState(() {
+        _selectedStartTime = picked;
+        _selectedEndTime = nextTimeOfDay;
+      });
+    }
   }
   
   Future<Null> _selectEndTime(BuildContext context ) async {
-    final picked = await showTimePicker(context: context, initialTime: _selectedEndTime);
+    int nextHour = _selectedStartTime.hour + 1;
+    TimeOfDay initial = _selectedStartTime.replacing(hour: nextHour);
+    final picked = await showTimePicker(context: context, initialTime: initial);
 
-    print(picked);
-    setState(() {
-      _selectedEndTime = picked;
-    });
+    if (picked != null && picked != _selectedEndTime) {
+      setState(() {
+        _selectedEndTime = picked;
+      });
+    }
   }
   
   _selectStartDate(BuildContext context) async {
@@ -145,23 +146,23 @@ class _AddScreenState extends State<AddScreen> {
     super.dispose();
   }
 
-  Widget _createDateTimeRow(BuildContext context, DateTime dateTime, TimeOfDay time,
-                         Function onTapDate, Function onTapTime) {
-
+  Widget _createDateTimeRow(BuildContext context, TimeOfDay start, TimeOfDay end,
+                         Function onTapStartTime, Function onTapEndTime) {
     return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
           Flexible(
-            child: GestureDetector(
-                onTap: onTapDate,
-                child: Center(child: Text(formatter.format(dateTime),
-                  style: TextStyle(fontSize: 20.0),),
-                )),
-          ),Flexible(
             child: Opacity(opacity: !_isAllDay ? 1.0 : 0.0,
               child: GestureDetector(
-                onTap: onTapTime,
-                child: Center(child: Text(time.format(context),
+                onTap: onTapStartTime,
+                child: Center(child: Text(start.format(context),
+                  style: TextStyle(fontSize: 20.0),),
+                )),
+          ),),Flexible(
+            child: Opacity(opacity: !_isAllDay ? 1.0 : 0.0,
+              child: GestureDetector(
+                onTap: onTapEndTime,
+                child: Center(child: Text(end.format(context),
                   style: TextStyle(fontSize: 20.0),),
                 )),
           ),)]);
