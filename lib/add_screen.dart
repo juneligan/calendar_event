@@ -23,7 +23,13 @@ class _AddScreenState extends State<AddScreen> {
   static final DateFormat formatter = DateFormat('E, MMM d, y');
   DateTime _selectedStartDate = DateTime.now();
   DateTime _selectedEndDate = DateTime.now();
-  bool isScreenDirty = false;
+  Color _selectedEventColor = Colors.blueAccent;
+
+  final eventColors = {
+    Colors.lightGreen: 'Light Green',
+    Colors.blueAccent: 'Blue Accent',
+    Colors.amberAccent: 'Amber Accent',
+  };
 
   @override
   void initState() {
@@ -54,7 +60,6 @@ class _AddScreenState extends State<AddScreen> {
             onPressed: () {
               String name = eventNameController.text.toString();
 
-
               DateTime date = DateTime(
                   _selectedStartDate.year, _selectedStartDate.month, _selectedStartDate.day,
                   _selectedStartTime.hour, _selectedStartTime.minute
@@ -62,7 +67,7 @@ class _AddScreenState extends State<AddScreen> {
 
               Duration duration = _isAllDay ? Duration(days: 1)
                   : Duration(hours: _selectedStartTime.hour, minutes: _selectedStartTime.minute);
-              CalendarEvent event = CalendarEvent(name, date, duration, Colors.lightGreen);
+              CalendarEvent event = CalendarEvent(name, date, duration, _selectedEventColor);
               Navigator.pop(context, event);
             },
             child: Text("Save"),
@@ -73,6 +78,44 @@ class _AddScreenState extends State<AddScreen> {
       body: Column(
         children: <Widget>[
           _createEventTextField(eventNameController, 'Add Title'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 8.0, 0.0, 8.0),
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text('Calendar Event'),
+                Flexible(
+                    child: Center(child: DropdownButton(
+                        value: _selectedEventColor,
+                        items:
+                        [Colors.lightGreen, Colors.blueAccent, Colors.amberAccent].map((color) {
+                          return DropdownMenuItem(
+                            value: color,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.circle,
+                                  color: color,
+                                  size: 24.0,
+                                  semanticLabel: 'Text to announce in accessibility modes',
+                                ),
+                                Text(eventColors[color]),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          print(value);
+                          setState(() {
+                            _selectedEventColor = value;
+                          });
+                        }),)),]
+          ),
+            ]),
+        ),
           _createAllDaySwitch(),
           GestureDetector(
             onTap: () => _selectStartDate(context),

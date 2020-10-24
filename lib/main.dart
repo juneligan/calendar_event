@@ -105,7 +105,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               },
             ),
           ),
-          Expanded(child: _buildEventList2()),
+          Expanded(child: _buildEventList()),
         ],
       ),
 
@@ -171,9 +171,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     });
   }
 
-  Widget _buildEventList2() {
-
-
+  Widget _buildEventList() {
     List events = _selectedCalendarDate ?? [];
     List<Widget> widgetEvents = events.map((event) {
 
@@ -183,7 +181,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           color: event.eventColor,
           border: Border(bottom: BorderSide(
-              color: Colors.blueAccent,
+              color: Colors.blue[800],
               width: 0.4
           )),
         ),
