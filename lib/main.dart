@@ -1,5 +1,6 @@
 import 'package:calendar_event/add_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -189,29 +190,55 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
       final int hour = event.duration.inHours;
       final int minutes = event.duration.inMinutes.remainder(60);
-      return MapEntry(index, Container(
-        decoration: BoxDecoration(
-          color: event.eventColor,
-          border: Border(bottom: BorderSide(
-              color: Colors.blue[800],
-              width: 0.4
-          )),
-        ),
-        child: ListTile(
-          title: Text(
-              '${hour.toString().padLeft(2, "0")}:${minutes.toString().padLeft(
-                  2, "0")} - ${event.name}'),
-          onTap: () {
-            print('$event tapped!');
-            _navigateToEditEvent(context, index, event);
-          },
-        ),
-      ));
+      return MapEntry(index, _getSlidable(context, index, event, hour, minutes));
     }).values.toList();
     return ListView(
       scrollDirection: Axis.vertical,
       shrinkWrap: true,
       children: widgetEvents,
+    );
+  }
+
+  Widget _getSlidable(context, index, event, hour, minutes) {
+    return Slidable(
+      actionExtentRatio: 0.25,
+      child: Container(
+          decoration: BoxDecoration(
+            color: event.eventColor,
+            border: Border(bottom: BorderSide(
+                color: Colors.blue[800],
+                width: 0.4
+            )),
+          ),
+          child: ListTile(
+            title: Text(
+                '${hour.toString().padLeft(2, "0")}:${minutes.toString().padLeft(
+                    2, "0")} - ${event.name}'),
+            onTap: () {
+              print('$event tapped!');
+              _navigateToEditEvent(context, index, event);
+            },
+          )),
+      actionPane: SlidableDrawerActionPane(),
+      secondaryActions: <Widget>[
+        new IconSlideAction(
+          caption: 'Delete',
+          color: Colors.red,
+          icon: Icons.delete,
+          onTap: () {
+            print('$event tapped!');
+            _showDiscardAlertDialog(context).then((value) {
+              if (value) {
+                setState(() {
+                  DateTime formattedDate = DateTime(event.date.year, event.date.month, event.date.day, 0, 0);
+                  _eventsOfTheSelectedDay[formattedDate].removeAt(index);
+                });
+              }
+            });
+
+          },
+        ),
+      ],
     );
   }
 
@@ -269,6 +296,26 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               elevation: 5.0,
               child: Text(buttonText),
             )
+          ]
+      );
+    });
+  }
+
+  static Future<bool> _showDiscardAlertDialog(BuildContext context) {
+    return showDialog(context: context, builder: (context) {
+      return AlertDialog(
+          title: Text('Are you sure to delete this?'),
+          actions: <Widget>[
+            MaterialButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              elevation: 5.0,
+              child: Text('Yes, Of course.'),
+            ),
+            MaterialButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              elevation: 5.0,
+              child: Text('Nope'),
+            ),
           ]
       );
     });
